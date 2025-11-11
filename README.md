@@ -1,6 +1,6 @@
 # llm_jupyter_extension
 
-A MAAP JupyterLab extension that integrates an LLM Chat into the ADE. [under development]
+A MAAP JupyterLab extension that integrates an LLM Chat into the user workspace environment. [under development]
 
 This extension is composed of a Python package named `llm_jupyter_extension`
 for the server extension and a NPM package named `llm-jupyter-extension`
