@@ -1,0 +1,7 @@
+{
+  "ServerApp": {
+    "jpserver_extensions": {
+      "llm_jupyter_extension": true
+    }
+  }
+}
