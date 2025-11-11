@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { getLiteLLMToken, triggerGitHubWorkflow } from './request';
-import { LITELLM_API_URL, LITELLM_MODEL, SYSTEM_PROMPT } from './constants';
+import {
+  LITELLM_API_URL,
+  LITELLM_AUDIO_API_URL,
+  LITELLM_MODEL,
+  LITELLM_TRANSCRIPTION_MODEL,
+  SYSTEM_PROMPT
+} from './constants';
 import { Notification } from '@jupyterlab/apputils';
 
 export const ChatPanel = () => {
@@ -9,6 +15,10 @@ export const ChatPanel = () => {
   );
   const [input, setInput] = useState('');
   const [liteLlmToken, setLiteLlmToken] = useState<string | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
+    null
+  );
 
   useEffect(() => {
     getLiteLLMToken().then(response => {
@@ -69,6 +79,50 @@ export const ChatPanel = () => {
     }
   }
 
+  async function startRecording() {
+    console.log('recording started');
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream);
+    const chunks: Blob[] = [];
+    recorder.ondataavailable = e => chunks.push(e.data);
+    recorder.onstop = async () => {
+      const blob = new Blob(chunks, { type: 'audio/webm' });
+      await sendAudio(blob);
+    };
+    recorder.start();
+    setMediaRecorder(recorder);
+    setRecording(true);
+  }
+
+  function stopRecording() {
+    mediaRecorder?.stop();
+    setRecording(false);
+  }
+
+  async function sendMessageFromText(text: string) {
+    setInput(text);
+    await sendMessage();
+  }
+
+  async function sendAudio(blob: Blob) {
+    console.log('sending audio');
+    const formData = new FormData();
+    formData.append('file', blob, 'speech.webm');
+    formData.append('model', LITELLM_TRANSCRIPTION_MODEL);
+
+    const resp = await fetch(LITELLM_AUDIO_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${liteLlmToken}`
+      },
+      body: formData
+    });
+    const data = await resp.json();
+    const text = data.text;
+    console.log('text:', data);
+    await sendMessageFromText(text);
+  }
+
   return (
     <div className="p-3 flex flex-col h-full">
       <div className="flex-grow overflow-y-auto space-y-2">
@@ -90,6 +144,9 @@ export const ChatPanel = () => {
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && sendMessage()}
         />
+        <button onClick={recording ? stopRecording : startRecording}>
+          {recording ? 'Stop' : '🎤 Speak'}
+        </button>
         <button
           className="ml-2 px-3 py-1 rounded bg-blue-500 text-white"
           onClick={sendMessage}

@@ -15,4 +15,7 @@ Otherwise, continue asking questions conversationally.
 
 export const LITELLM_API_URL =
   'https://litellm.maap.xyz/api/v1/chat/completions';
+export const LITELLM_AUDIO_API_URL =
+  'https://litellm.maap.xyz/api/v1/audio/transcriptions';
 export const LITELLM_MODEL = 'claude-sonnet-4-5-20250929';
+export const LITELLM_TRANSCRIPTION_MODEL = '';
